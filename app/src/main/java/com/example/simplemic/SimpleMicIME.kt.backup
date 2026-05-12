@@ -1,0 +1,40 @@
+package com.example.simplemic
+
+import android.inputmethodservice.InputMethodService
+import android.view.View
+import android.widget.ImageButton
+import android.view.inputmethod.InputMethodManager
+import android.content.Context
+import android.os.IBinder
+
+class SimpleMicIME : InputMethodService() {
+
+    override fun onCreateInputView(): View {
+        val view = layoutInflater.inflate(R.layout.keyboard_view, null)
+        val micButton = view.findViewById<ImageButton>(R.id.mic_button)
+
+        micButton.setOnClickListener {
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            
+            // ID จริงจากเครื่องคุณ (เจาะจงตัว Google TTS Voice IME)
+            val voiceImeId = "com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService"
+
+            try {
+                // ดึง Token ปัจจุบันมาเพื่อใช้ในการสั่งสลับ
+                val token: IBinder? = window?.window?.attributes?.token
+                
+                if (token != null) {
+                    // สั่งให้ระบบ "ดีด" จากคีย์บอร์ดเรา ไปเข้าหน้าไมค์ Google ทันที
+                    imm.setInputMethod(token, voiceImeId)
+                } else {
+                    // แผนสำรองถ้าดึง Token ไม่ได้
+                    imm.showInputMethodPicker()
+                }
+            } catch (e: Exception) {
+                // ถ้าสลับอัตโนมัติไม่ได้ ให้ขึ้นเมนูให้เลือกแทน
+                imm.showInputMethodPicker()
+            }
+        }
+        return view
+    }
+}
