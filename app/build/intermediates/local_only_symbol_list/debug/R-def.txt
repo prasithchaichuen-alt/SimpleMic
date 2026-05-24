@@ -1,0 +1,19 @@
+R_DEF: Internal format may change without notice
+local
+drawable btn_style
+id btn0
+id btn1
+id btn2
+id btn3
+id btn4
+id btn5
+id btn6
+id btn7
+id btn8
+id btn9
+id btn_del
+id btn_dot
+id mic_button
+layout keyboard_view
+style NumBtn
+xml method

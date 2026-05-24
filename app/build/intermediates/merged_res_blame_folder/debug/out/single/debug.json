@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "/home/ok/.gradle/daemon/8.5/com.example.simplemic.app-merged_res-20:/layout_keyboard_view.xml.flat",
+        "source": "/home/ok/.gradle/daemon/8.5/com.example.simplemic.app-main-22:/layout/keyboard_view.xml"
+    },
+    {
+        "merged": "/home/ok/.gradle/daemon/8.5/com.example.simplemic.app-merged_res-20:/xml_method.xml.flat",
+        "source": "/home/ok/.gradle/daemon/8.5/com.example.simplemic.app-main-22:/xml/method.xml"
+    },
+    {
+        "merged": "/home/ok/.gradle/daemon/8.5/com.example.simplemic.app-merged_res-20:/layout_activity_main.xml.flat",
+        "source": "/home/ok/.gradle/daemon/8.5/com.example.simplemic.app-main-22:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/ok/.gradle/daemon/8.5/com.example.simplemic.app-merged_res-20:/drawable_btn_style.xml.flat",
+        "source": "/home/ok/.gradle/daemon/8.5/com.example.simplemic.app-main-22:/drawable/btn_style.xml"
+    }
+]
