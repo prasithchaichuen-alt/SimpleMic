@@ -1,88 +1,54 @@
 package com.example.simplemic
 
-import android.content.Intent
-import android.content.pm.PackageManager
+import android.content.Context
 import android.inputmethodservice.InputMethodService
-import android.os.Bundle
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.ImageButton
-import androidx.core.content.ContextCompat
-import android.Manifest
 import android.widget.Toast
 
 class SimpleMicIME : InputMethodService() {
-
-    private var speechRecognizer: SpeechRecognizer? = null
-    private var recognitionIntent: Intent? = null
-
-    override fun onCreate() {
-        super.onCreate()
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-        recognitionIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "th-TH") // ตั้งค่าเป็นภาษาไทย
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        }
-
-        speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {}
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(rmsdB: Float) {}
-            override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() {}
-            override fun onError(error: Int) {
-                val message = when (error) {
-                    SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
-                    SpeechRecognizer.ERROR_CLIENT -> "Client side error"
-                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Insufficient permissions"
-                    SpeechRecognizer.ERROR_NETWORK -> "Network error"
-                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
-                    SpeechRecognizer.ERROR_NO_MATCH -> "No match"
-                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "RecognitionService busy"
-                    SpeechRecognizer.ERROR_SERVER -> "Error from server"
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech input"
-                    else -> "Unknown error"
-                }
-                Toast.makeText(applicationContext, "Error: $message", Toast.LENGTH_SHORT).show()
-            }
-
-            override fun onResults(results: Bundle?) {
-                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                if (!matches.isNullOrEmpty()) {
-                    currentInputConnection?.commitText(matches[0], 1)
-                }
-            }
-
-            override fun onPartialResults(partialResults: Bundle?) {
-                // สามารถแสดงตัวอย่างข้อความขณะกำลังพูดได้ที่นี่
-            }
-
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-        })
-    }
 
     override fun onCreateInputView(): View {
         val view = layoutInflater.inflate(R.layout.keyboard_view, null)
         
         val micButton = view.findViewById<ImageButton>(R.id.mic_button)
         micButton?.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                speechRecognizer?.startListening(recognitionIntent)
-                Toast.makeText(this, "กำลังฟัง...", Toast.LENGTH_SHORT).show()
-            } else {
-                // ถ้ายังไม่มีสิทธิ์ ให้เปิด PermissionActivity
-                val intent = Intent(this, PermissionActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            val token = window?.window?.attributes?.token
+            
+            // ค้นหา ID ของ Google Voice Typing โดยอัตโนมัติ
+            val list = imm.enabledInputMethodList
+            var googleVoiceImeId: String? = null
+            
+            for (info in list) {
+                // ตรวจสอบ ID ที่เป็นของ Google Voice Typing (อาจต่างกันไปตามรุ่นมือถือ)
+                if (info.id.contains("com.google.android.tts") || 
+                    info.id.contains("com.google.android.googlequicksearchbox")) {
+                    if (info.id.lowercase().contains("voice")) {
+                        googleVoiceImeId = info.id
+                        break
+                    }
                 }
-                startActivity(intent)
+            }
+            
+            if (googleVoiceImeId != null) {
+                try {
+                    // สั่งสลับไปที่ Google Voice Typing ทันที
+                    imm.setInputMethod(token, googleVoiceImeId)
+                } catch (e: Exception) {
+                    // ถ้าสลับตรงๆ ไม่ได้ ให้แสดงหน้าต่างเลือก
+                    imm.showInputMethodPicker()
+                }
+            } else {
+                // ถ้าหาไม่เจอจริงๆ ให้ User เลือกเอง
+                Toast.makeText(this, "ไม่พบ Google Voice Typing กรุณาเลือกเอง", Toast.LENGTH_SHORT).show()
+                imm.showInputMethodPicker()
             }
         }
 
-        // ฟังก์ชันส่งตัวอักษร/ตัวเลข
+        // ปุ่มตัวเลข
         val listener = View.OnClickListener { v ->
             val b = v as Button
             currentInputConnection?.commitText(b.text, 1)
@@ -92,7 +58,6 @@ class SimpleMicIME : InputMethodService() {
             R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4,
             R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9, R.id.btn_dot
         )
-        
         for (id in buttonIds) {
             view.findViewById<Button>(id)?.setOnClickListener(listener)
         }
@@ -102,10 +67,5 @@ class SimpleMicIME : InputMethodService() {
         }
 
         return view
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        speechRecognizer?.destroy()
     }
 }
